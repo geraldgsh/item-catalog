@@ -58,4 +58,5 @@ The homepage displays all current categories along with the latest added items.
 
 
 HMTL was validated using https://validator.w3.org
-Python was validated using http://pep8online.com/checkresult
+
+Python was validated using http://pep8online.com/checkresult# item-catalog
