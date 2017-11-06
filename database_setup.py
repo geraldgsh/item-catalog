@@ -47,9 +47,11 @@ class BookItem(Base):
     author = Column(String(250))
     edition = Column(String(20))
     genre_id = Column(Integer, ForeignKey('genre.id'))
+    genre = relationship("BookItem", cascade="all, delete-orphan")
     genre = relationship(Genre)
     user_id = Column(Integer, ForeignKey('user.id'))
     user = relationship(User)
+
 
     @property
     def serialize(self):

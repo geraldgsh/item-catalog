@@ -36,6 +36,15 @@ DBSession = sessionmaker(bind=engine)
 session = DBSession()
 
 
+def login_required(f):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if 'username' not in login_session:
+            return redirect('/login')
+        return f(*args, **kwargs)
+    return decorated_function
+
+
 # Create anti-forgery state token
 @app.route('/login')
 def showLogin():
@@ -305,14 +314,12 @@ def showGenres():
         return render_template('publicbookstore.html', genres=genres)
     else:
         return render_template('bookstore.html', genres=genres)
-#    return render_template('bookstore.html', genres = genres)
 
 
 # Create a new genre
 @app.route('/genre/new/', methods=['GET', 'POST'])
+@login_required
 def newGenre():
-    if 'username' not in login_session:
-        return redirect('/login')
     if request.method == 'POST':
         newGenre = Genre(title=request.form['title'],
                          user_id=login_session['user_id'])
@@ -326,12 +333,15 @@ def newGenre():
 
 # Edit a genre
 @app.route('/genre/<int:genre_id>/edit/', methods=['GET', 'POST'])
+@login_required
 def editGenre(genre_id):
+# Query database and fetch a single Genre for editing
     editedGenre = session.query(Genre).filter_by(id=genre_id).one()
-    if 'username' not in login_session:
-        return redirect('/login')
     if editedGenre.user_id != login_session['user_id']:
-    	return "<script>function myFunction() {alert('You are not authorized to edit this genre. Please create your own genre in order to edit.');}</script><body onload='myFunction()'>"
+        return "<script>function myFunction() {alert('You are not authorized to \
+                 edit this genre. \
+                 Please create your own genre in order \
+                 to edit.');}</script><body onload='myFunction()'>"
     if request.method == 'POST':
         if request.form['title']:
             editedGenre.title = request.form['title']
@@ -343,12 +353,14 @@ def editGenre(genre_id):
 
 # Delete a genre
 @app.route('/genre/<int:genre_id>/delete/', methods=['GET', 'POST'])
+@login_required
 def deleteGenre(genre_id):
     genreToDelete = session.query(Genre).filter_by(id=genre_id).one()
-    if 'username' not in login_session:
-        return redirect('/login')
     if genreToDelete.user_id != login_session['user_id']:
-        return "<script>function myFunction() {alert('You are not authorized to delete this genre. Please create your own genre in order to delete.');}</script><body onload='myFunction()'>"
+        return "<script>function myFunction() {alert('You are not authorized to \
+                 delete this genre. \
+                 Please create your own genre in order \
+                 to delete.');}</script><body onload='myFunction()'>"
     if request.method == 'POST':
         session.delete(genreToDelete)
         flash('%s Successfully Deleted' % genreToDelete.title)
@@ -373,12 +385,14 @@ def showMenu(genre_id):
 
 # Create a new book item
 @app.route('/genre/<int:genre_id>/menu/new/', methods=['GET', 'POST'])
+@login_required
 def newBookItem(genre_id):
-    if 'username' not in login_session:
-        return redirect('/login')
     genre = session.query(Genre).filter_by(id=genre_id).one()
     if login_session['user_id'] != genre.user_id:
-        return "<script>function myFunction() {alert('You are not authorized to add menu items to this genre. Please create your own genre in order to add items.');}</script><body onload='myFunction()'>"
+        return "<script>function myFunction() {alert('You are not authorized to add \
+                 menu items to this genre. \
+                 Please create your own genre in order to \
+                 add items.');}</script><body onload='myFunction()'>"
     if request.method == 'POST':
         newBookItem = BookItem(title=request.form['title'],
                                description=request.form['description'],
@@ -398,13 +412,15 @@ def newBookItem(genre_id):
 
 # Edit a menu item
 @app.route('/genre/<int:genre_id>/menu/<int:book_id>/edit', methods=['GET', 'POST'])
+@login_required
 def editBookItem(genre_id, book_id):
-    if 'username' not in login_session:
-        return redirect('/login')
     editedItem = session.query(BookItem).filter_by(id=book_id).one()
     genre = session.query(Genre).filter_by(id=genre_id).one()
     if login_session['user_id'] != genre.user_id:
-        return "<script>function myFunction() {alert('You are not authorized to edit menu items to this genre. Please create your own genret in order to edit items.');}</script><body onload='myFunction()'>"
+        return "<script>function myFunction() {alert('You are not authorized to edit \
+                 menu items to this genre. \
+                 Please create your own genret in order to \
+                 edit items.');}</script><body onload='myFunction()'>"
     if request.method == 'POST':
         if request.form['title']:
             editedItem.title = request.form['title']
@@ -428,13 +444,15 @@ def editBookItem(genre_id, book_id):
 
 # Delete a book item
 @app.route('/genre/<int:genre_id>/menu/<int:book_id>/delete', methods=['GET', 'POST'])
+@login_required
 def deleteBookItem(genre_id, book_id):
-    if 'username' not in login_session:
-        return redirect('/login')
     genre = session.query(Genre).filter_by(id=genre_id).one()
     itemToDelete = session.query(BookItem).filter_by(id=book_id).one()
     if login_session['user_id'] != genre.user_id:
-        return "<script>function myFunction() {alert('You are not authorized to delete menu items to this genre. Please create your own genre in order to delete items.');}</script><body onload='myFunction()'>"
+        return "<script>function myFunction() {alert('You are not authorized to delete \
+                 menu items to this genre. \
+                 Please create your own genre in order to \
+                 delete items.');}</script><body onload='myFunction()'>"
     if request.method == 'POST':
         session.delete(itemToDelete)
         session.commit()
